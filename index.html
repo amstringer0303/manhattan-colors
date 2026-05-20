@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manhattan · A Century of Color</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,6 +12,7 @@
     font-family: 'Georgia', 'Times New Roman', serif;
     color: #38302A;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -210,6 +212,7 @@
     border-radius: 2px;
     outline: none;
     cursor: pointer;
+    touch-action: pan-x;
   }
   input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -225,6 +228,36 @@
   input[type=range]::-moz-range-thumb {
     width: 18px; height: 18px; border-radius: 50%;
     background: #2C241E; cursor: pointer; border: none;
+  }
+
+  /* ── Mobile ──────────────────────────────── */
+  @media (max-width: 640px) {
+    header { padding: 10px 0 4px; }
+    h1 { font-size: 0.9rem; letter-spacing: 0.1em; }
+    .subtitle { display: none; }
+
+    #main { flex-direction: column; gap: 0; padding: 0 10px; }
+
+    aside {
+      width: 100%;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 0 2px;
+      flex-shrink: 0;
+      overflow: visible;
+    }
+    .year-block { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; }
+    .year-num  { font-size: 2rem; }
+    .year-label { font-size: 0.5rem; white-space: nowrap; }
+    .count-line { font-size: 0.6rem; margin-top: 0; }
+    #legend { display: none; }
+
+    #controls { padding: 8px 10px 14px; gap: 10px; }
+
+    input[type=range]::-webkit-slider-thumb { width: 28px; height: 28px; }
+    input[type=range]::-moz-range-thumb     { width: 28px; height: 28px; }
+    #playBtn { width: 40px; height: 40px; }
   }
 
   #playBtn {

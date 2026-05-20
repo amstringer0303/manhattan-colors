@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manhattan · A Century of Color</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #F0EAE0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #38302A;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  header {
+    padding: 14px 0 6px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  h1 {
+    font-size: 1.25rem;
+    font-weight: normal;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .subtitle {
+    font-size: 0.7rem;
+    color: #8A7060;
+    margin-top: 3px;
+    font-style: italic;
+    letter-spacing: 0.03em;
+  }
+
+  #main {
+    display: flex;
+    flex: 1;
+    gap: 18px;
+    padding: 0 18px;
+    width: 100%;
+    max-width: 1200px;
+    min-height: 0;
+  }
+
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+  }
+
+  #loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #8A7060;
+    font-style: italic;
+    font-size: 0.85rem;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #D4C8B8;
+    border-top-color: #A08878;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Sidebar ─────────────────────────────── */
+  aside {
+    width: 210px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 6px 0 0;
+    overflow: hidden;
+  }
+
+  .year-block {
+    text-align: center;
+  }
+  .year-num {
+    font-size: 3.4rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: #2C241E;
+  }
+  .year-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #9A8878;
+    margin-top: 2px;
+  }
+  .count-line {
+    font-size: 0.72rem;
+    color: #6A5848;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .legend-title {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #9A8878;
+    margin-bottom: 8px;
+  }
+
+  .era-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 7px;
+    transition: opacity 0.4s;
+  }
+  .era-row.dim { opacity: 0.22; }
+
+  .swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .era-info { flex: 1; min-width: 0; }
+  .era-name {
+    font-size: 0.64rem;
+    font-weight: bold;
+    color: #3C3028;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .era-sub {
+    font-size: 0.57rem;
+    color: #8A7868;
+    font-style: italic;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    height: 3px;
+    background: #E4DDD4;
+    border-radius: 2px;
+    margin-top: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.45s ease;
+  }
+  .pct-label {
+    font-size: 0.6rem;
+    color: #9A8878;
+    margin-top: 2px;
+  }
+
+  /* ── Bottom controls ─────────────────────── */
+  #controls {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 1200px;
+    padding: 10px 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .edge-year {
+    font-size: 0.65rem;
+    color: #9A8878;
+    font-style: italic;
+    flex-shrink: 0;
+    width: 30px;
+    text-align: center;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 3px;
+    background: linear-gradient(
+      to right,
+      #A86048 0%, #C47A5A 16%, #D4A878 32%, #D8C490 42%,
+      #C4C0B0 55%, #A8B4BC 68%, #90ACCC 82%, #B0C8DC 100%
+    );
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #2C241E;
+    cursor: pointer;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.25);
+    transition: transform 0.1s;
+  }
+  input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #2C241E; cursor: pointer; border: none;
+  }
+
+  #playBtn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #A09080;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    color: #4A3C30;
+    font-size: 0;
+  }
+  #playBtn:hover { background: #E4DDD4; }
+  #playBtn svg { pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Manhattan &middot; A Century of Color</h1>
+  <p class="subtitle">The built fabric of the island, building by construction year &mdash; drag the slider or press Play</p>
+</header>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div id="loading">
+      <div class="spinner"></div>
+      <span>Loading building data&hellip;</span>
+    </div>
+  </div>
+
+  <aside>
+    <div class="year-block">
+      <div class="year-num" id="yearNum">1920</div>
+      <div class="year-label">Buildings built by</div>
+      <div class="count-line" id="countLine">&nbsp;</div>
+    </div>
+    <div id="legend">
+      <div class="legend-title">Era by construction year</div>
+      <div id="eraRows"></div>
+    </div>
+  </aside>
+</div>
+
+<div id="controls">
+  <span class="edge-year">1850</span>
+  <input type="range" id="slider" min="1850" max="2024" value="1920" step="1">
+  <span class="edge-year">2024</span>
+  <button id="playBtn" title="Play / Pause" aria-label="Play">
+    <svg id="iconPlay" width="12" height="14" viewBox="0 0 12 14">
+      <polygon points="0,0 12,7 0,14" fill="currentColor"/>
+    </svg>
+    <svg id="iconPause" width="12" height="14" viewBox="0 0 12 14" style="display:none">
+      <rect x="0" y="0" width="4" height="14" fill="currentColor"/>
+      <rect x="8" y="0" width="4" height="14" fill="currentColor"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+/* ── Era definitions ──────────────────────── */
+const ERAS = [
+  { max: 1880, color: '#A86048', name: 'Pre-1880',      sub: 'Brownstone & brick' },
+  { max: 1900, color: '#C47A5A', name: '1880 – 1900',   sub: 'Romanesque red brick' },
+  { max: 1920, color: '#D4A878', name: '1900 – 1920',   sub: 'Beaux-Arts limestone' },
+  { max: 1940, color: '#D8C490', name: '1920 – 1940',   sub: 'Art Deco setbacks' },
+  { max: 1960, color: '#C4C0B0', name: '1940 – 1960',   sub: 'Mid-century concrete' },
+  { max: 1980, color: '#A8B4BC', name: '1960 – 1980',   sub: 'Brutalist slabs' },
+  { max: 2000, color: '#90ACCC', name: '1980 – 2000',   sub: 'Steel curtain wall' },
+  { max: 9999, color: '#B0C8DC', name: '2000 – present',sub: 'Glass supertalls' },
+];
+
+function eraIndex(year) {
+  return ERAS.findIndex(e => year <= e.max);
+}
+
+function hexRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+}
+
+/* ── Build legend DOM ────────────────────── */
+const eraRowsEl = document.getElementById('eraRows');
+ERAS.forEach((era, i) => {
+  eraRowsEl.insertAdjacentHTML('beforeend', `
+    <div class="era-row dim" id="er${i}">
+      <div class="swatch" style="background:${era.color}"></div>
+      <div class="era-info">
+        <div class="era-name">${era.name}</div>
+        <div class="era-sub">${era.sub}</div>
+        <div class="bar-track"><div class="bar-fill" id="bf${i}" style="background:${era.color}"></div></div>
+        <div class="pct-label" id="bp${i}">0%</div>
+      </div>
+    </div>`);
+});
+
+/* ── Canvas setup ────────────────────────── */
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('canvas-wrap');
+let W = 0, H = 0;
+
+function resize() {
+  const r  = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  W = r.width;  H = r.height;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  if (sorted.length) draw(currentYear);
+}
+
+/* ── State ───────────────────────────────── */
+let sorted      = [];   // buildings sorted by year
+let meta        = null;
+let currentYear = 1920;
+
+/* ── Coordinate mapping ──────────────────── */
+const PAD = 0.045;
+
+function toXY(bx, by) {
+  const { xmin, xmax, ymin, ymax } = meta;
+  const rw = xmax - xmin, rh = ymax - ymin;
+  const pw = rw * PAD, ph = rh * PAD;
+  const x = ((bx - xmin + pw) / (rw + 2 * pw)) * W;
+  const y = H - ((by - ymin + ph) / (rh + 2 * ph)) * H;
+  return [x, y];
+}
+
+function blobRadius(area, floors) {
+  const fp = (area && floors && floors > 0) ? area / floors : (area || 0);
+  if (fp <= 0) return 2.8;
+  const r = 1.8 + Math.pow(fp, 0.38) * 0.07;
+  return Math.min(Math.max(r, 2.2), 7.5);
+}
+
+/* ── Main draw ───────────────────────────── */
+const eraCounts = new Array(ERAS.length).fill(0);
+
+function draw(maxYear) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#F0EAE0';
+  ctx.fillRect(0, 0, W, H);
+
+  eraCounts.fill(0);
+  let count = 0;
+
+  for (const b of sorted) {
+    if (b[2] > maxYear) break;
+    const [x, y] = toXY(b[0], b[1]);
+    const r      = blobRadius(b[3], b[4]);
+    const ei     = eraIndex(b[2]);
+    if (ei < 0) continue;
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 6.2832);
+    ctx.fillStyle = hexRgba(ERAS[ei].color, 0.62);
+    ctx.fill();
+    eraCounts[ei]++;
+    count++;
+  }
+
+  /* update UI */
+  document.getElementById('yearNum').textContent  = maxYear;
+  document.getElementById('countLine').textContent =
+    count ? count.toLocaleString() + ' buildings visible' : '';
+
+  ERAS.forEach((era, i) => {
+    const active = maxYear > (i === 0 ? 1800 : ERAS[i-1].max);
+    document.getElementById(`er${i}`).classList.toggle('dim', !active);
+    const pct = count ? (eraCounts[i] / count * 100) : 0;
+    document.getElementById(`bf${i}`).style.width = pct.toFixed(1) + '%';
+    document.getElementById(`bp${i}`).textContent = pct.toFixed(1) + '%';
+  });
+}
+
+/* ── Slider + keyboard ───────────────────── */
+const slider = document.getElementById('slider');
+let raf = null;
+
+function setYear(y) {
+  y = Math.max(1850, Math.min(2024, y));
+  currentYear = y;
+  slider.value = y;
+  draw(y);
+}
+
+slider.addEventListener('input', () => setYear(+slider.value));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') setYear(currentYear + 1);
+  if (e.key === 'ArrowLeft')  setYear(currentYear - 1);
+});
+
+/* ── Play / pause ────────────────────────── */
+let playing = false;
+const playBtn   = document.getElementById('playBtn');
+const iconPlay  = document.getElementById('iconPlay');
+const iconPause = document.getElementById('iconPause');
+let lastT = 0;
+const YEARS_PER_SEC = 8; // speed
+
+function animStep(ts) {
+  if (!playing) return;
+  const dt = (ts - lastT) / 1000;
+  lastT = ts;
+  let next = currentYear + dt * YEARS_PER_SEC;
+  if (next >= 2024) { next = 2024; stopPlay(); }
+  setYear(Math.round(next));
+  raf = requestAnimationFrame(animStep);
+}
+
+function startPlay() {
+  if (currentYear >= 2024) setYear(1850);
+  playing = true;
+  iconPlay.style.display  = 'none';
+  iconPause.style.display = '';
+  lastT = performance.now();
+  raf = requestAnimationFrame(animStep);
+}
+
+function stopPlay() {
+  playing = false;
+  iconPlay.style.display  = '';
+  iconPause.style.display = 'none';
+  cancelAnimationFrame(raf);
+}
+
+playBtn.addEventListener('click', () => playing ? stopPlay() : startPlay());
+
+/* ── Load data ───────────────────────────── */
+fetch('manhattan_buildings.json')
+  .then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  })
+  .then(data => {
+    meta   = data.meta;
+    sorted = data.buildings.slice().sort((a, b) => a[2] - b[2]);
+    document.getElementById('loading').style.display = 'none';
+    resize();
+    draw(currentYear);
+  })
+  .catch(err => {
+    const el = document.getElementById('loading');
+    el.querySelector('.spinner').style.display = 'none';
+    el.querySelector('span').textContent =
+      'Could not load manhattan_buildings.json — run preprocess.py first, then serve with: python -m http.server 8000';
+    console.error(err);
+  });
+
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>

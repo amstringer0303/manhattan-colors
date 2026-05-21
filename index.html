@@ -342,24 +342,6 @@ function hexRgba(hex, a) {
   return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
 }
 
-/* ── Watercolor blob sprites (one per era) ── */
-const BLOB_SPR = 64;
-const blobSprites = ERAS.map(era => {
-  const oc = document.createElement('canvas');
-  oc.width = oc.height = BLOB_SPR;
-  const c = oc.getContext('2d');
-  const h = BLOB_SPR / 2;
-  const g = c.createRadialGradient(h, h, 0, h, h, h);
-  g.addColorStop(0,    hexRgba(era.color, 0.55)); // solid body
-  g.addColorStop(0.55, hexRgba(era.color, 0.50)); // solid body
-  g.addColorStop(0.80, hexRgba(era.color, 0.20)); // short soft edge
-  g.addColorStop(1,    hexRgba(era.color, 0));
-  c.beginPath();
-  c.arc(h, h, h, 0, 6.2832);
-  c.fillStyle = g;
-  c.fill();
-  return oc;
-});
 
 /* ── Build legend DOM ────────────────────── */
 const eraRowsEl = document.getElementById('eraRows');
@@ -411,12 +393,11 @@ function toXY(bx, by) {
   return [x, y];
 }
 
-function blobRadius(area, floors, bx) {
-  const fp = (area && floors > 0) ? area / floors : (area || 0);
-  const base = fp <= 0 ? 3 : Math.min(Math.max(1.8 + Math.pow(fp, 0.38) * 0.07, 2.5), 8);
-  // stable per-building jitter using x coord as seed
-  const jitter = 0.88 + 0.24 * ((bx * 1664525 + 1013904223) >>> 0) / 0xFFFFFFFF;
-  return base * jitter;
+function blobRadius(area, floors) {
+  const fp = (area && floors && floors > 0) ? area / floors : (area || 0);
+  if (fp <= 0) return 2.8;
+  const r = 1.8 + Math.pow(fp, 0.38) * 0.07;
+  return Math.min(Math.max(r, 2.2), 7.5);
 }
 
 /* ── Main draw ───────────────────────────── */
@@ -433,11 +414,14 @@ function draw(maxYear) {
   for (const b of sorted) {
     if (b[2] > maxYear) break;
     const [x, y] = toXY(b[0], b[1]);
-    const r      = blobRadius(b[3], b[4], b[0]);
+    const r      = blobRadius(b[3], b[4]);
     const ei     = eraIndex(b[2]);
     if (ei < 0) continue;
 
-    ctx.drawImage(blobSprites[ei], x - r, y - r, r * 2, r * 2);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 6.2832);
+    ctx.fillStyle = hexRgba(ERAS[ei].color, 0.62);
+    ctx.fill();
     eraCounts[ei]++;
     count++;
   }
